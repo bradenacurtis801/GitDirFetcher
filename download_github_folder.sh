@@ -6,7 +6,7 @@ download_github_folder() {
     local repo=""
     local branch=""
     local dirname=""
-    local max_jobs=10  # Maximum number of parallel jobs
+    local max_jobs=100  # Maximum number of parallel jobs
 
     # Display help message
     show_help() {
