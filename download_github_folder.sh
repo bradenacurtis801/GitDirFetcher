@@ -6,6 +6,7 @@ download_github_folder() {
     local repo=""
     local branch=""
     local dirname=""
+    local max_jobs=10  # Maximum number of parallel jobs
 
     # Display help message
     show_help() {
@@ -52,7 +53,7 @@ download_github_folder() {
     download_files() {
         local folder_url="$1"
         local local_dir="$2"
-        
+
         # Fetch the JSON response from the GitHub API
         local response=$(curl -s "$folder_url")
 
@@ -70,19 +71,30 @@ download_github_folder() {
             if [ "$type" = "file" ]; then
                 # Create the directory structure and download the file
                 mkdir -p "$local_dir/$(dirname "$file_path")"
-                curl -s "$download_url" -o "$local_dir/$file_path"
+                curl -s "$download_url" -o "$local_dir/$file_path" &
                 echo "Downloaded: $local_dir/$file_path"
             elif [ "$type" = "dir" ]; then
                 # If the item is a directory, recursively download its contents
                 local dir_url="${base_url}/${file_path}?ref=${branch}"
                 download_files "$dir_url" "$local_dir"
             fi
+
+            # Limit the number of parallel jobs
+            while (( $(jobs -r | wc -l) >= max_jobs )); do
+                sleep 0.1
+            done
         done
+
+        # Wait for all background jobs to finish
+        wait
     }
 
     # Start downloading files from the specified URL
     download_files "$url" "$dirname"
 }
+
+# Example usage
+# download_github_folder -path charts/rancher-monitoring/102.0.1+up40.1.2 -repo rancher/charts -branch dev-v2.9 -dirname my_custom_directory
 
 # Call the function with the provided arguments
 download_github_folder "$@"
