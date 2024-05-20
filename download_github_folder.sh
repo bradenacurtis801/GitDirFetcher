@@ -26,8 +26,8 @@ download_github_folder() {
             -repo) repo="$2"; shift ;;
             -branch) branch="$2"; shift ;;
             -dirname) dirname="$2"; shift ;;
-            -h) show_help; return 0 ;;
-            *) echo "Unknown parameter passed: $1"; show_help; return 1 ;;
+            -h) show_help; exit 0 ;;
+            *) echo "Unknown parameter passed: $1"; show_help; exit 1 ;;
         esac
         shift
     done
@@ -36,7 +36,7 @@ download_github_folder() {
     if [ -z "$path" ] || [ -z "$repo" ] || [ -z "$branch" ]; then
         echo "Error: -path, -repo, and -branch arguments are required."
         show_help
-        return 1
+        exit 1
     fi
 
     # Set the directory name to the basename of the path if not provided
@@ -83,9 +83,6 @@ download_github_folder() {
     # Start downloading files from the specified URL
     download_files "$url" "$dirname"
 }
-
-# Example usage
-# download_github_folder -path charts/rancher-monitoring/102.0.1+up40.1.2 -repo rancher/charts -branch dev-v2.9 -dirname my_custom_directory
 
 # Call the function with the provided arguments
 download_github_folder "$@"
