@@ -6,7 +6,7 @@ download_github_folder() {
     local repo=""
     local branch=""
     local dirname=""
-    local max_jobs=100  # Maximum number of parallel jobs
+    local max_jobs=20  # Reasonable number of parallel jobs
 
     # Display help message
     show_help() {
@@ -53,9 +53,15 @@ download_github_folder() {
     download_files() {
         local folder_url="$1"
         local local_dir="$2"
-
+        
         # Fetch the JSON response from the GitHub API
         local response=$(curl -s "$folder_url")
+
+        # Check if the response is valid JSON
+        if ! echo "$response" | jq empty; then
+            echo "Error: Invalid JSON response"
+            return
+        fi
 
         # Loop through the JSON response and handle each item
         echo "$response" | jq -r '.[] | @base64' | while read -r file; do
