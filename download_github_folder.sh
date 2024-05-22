@@ -22,7 +22,7 @@ download_github_folder() {
 
     # Function to clean quotes
     clean_quotes() {
-        echo "$1" | sed "s/[‘’]/'/g; s/[“”]/\"/g"
+        echo "$1" | sed "s/[‘’]/'/g; s/[“”]/\"/g; s/^'//; s/'$//"
     }
 
     # Parse arguments
@@ -56,6 +56,13 @@ download_github_folder() {
         show_help
         exit 1
     fi
+
+    # Print cleaned arguments for debugging
+    echo "Cleaned Arguments:"
+    echo "Path: $path"
+    echo "Repo: $repo"
+    echo "Branch: $branch"
+    echo "Dirname: $dirname"
 
     # Set the directory name to the basename of the path if not provided
     if [ -z "$dirname" ]; then
