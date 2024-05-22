@@ -33,9 +33,34 @@ download_github_folder() {
         shift
     done
 
-    # Check if path, repo, and branch are provided
-    if [ -z "$path" ] || [ -z "$repo" ] || [ -z "$branch" ]; then
-        echo "Error: -path, -repo, and -branch arguments are required."
+    # Replace styled quotes with straight quotes
+    path=$(echo "$path" | sed "s/‘/'/g; s/’/'/g")
+    repo=$(echo "$repo" | sed "s/‘/'/g; s/’/'/g")
+    branch=$(echo "$branch" | sed "s/‘/'/g; s/’/'/g")
+    dirname=$(echo "$dirname" | sed "s/‘/'/g; s/’/'/g")
+
+    # Validate required arguments
+    if [ -z "$path" ]; then
+        echo "Error: -path argument is required."
+        show_help
+        exit 1
+    fi
+
+    if [ -z "$repo" ]; then
+        echo "Error: -repo argument is required."
+        show_help
+        exit 1
+    fi
+
+    if [ -z "$branch" ]; then
+        echo "Error: -branch argument is required."
+        show_help
+        exit 1
+    fi
+
+    # Check if variables are quoted correctly
+    if [[ "$path" =~ [[:space:]] ]] || [[ "$repo" =~ [[:space:]] ]] || [[ "$branch" =~ [[:space:]] ]] || [[ "$dirname" =~ [[:space:]] ]]; then
+        echo "Error: Arguments contain spaces or invalid characters. Ensure all arguments are correctly quoted."
         show_help
         exit 1
     fi
