@@ -44,11 +44,11 @@ curl -L https://raw.githubusercontent.com/bradenacurtis801/GitDirFetcher/main/do
 ```
 
 ### Arguments
--path <path>: The path in the repository to download.
--branch <branch>: The branch of the repository to download from.
--dirname <dirname>: Optional. The name of the local directory to save the files. Defaults to the basename of the path.
--rebase: Optional. If specified, place the contents directly into the specified dirname, without preserving the full path structure from the repository.
--h: Display the help message.
+- -path <path>: The path in the repository to download.
+- -branch <branch>: The branch of the repository to download from.
+- -dirname <dirname>: Optional. The name of the local directory to save the files. Defaults to the basename of the path.
+- -rebase: Optional. If specified, place the contents directly into the specified dirname, without preserving the full path structure from the repository.
+- -h: Display the help message.
 
 ### Example
 ```sh
