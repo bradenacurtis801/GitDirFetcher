@@ -26,13 +26,6 @@ You can install `jq` using your package manager:
 - **macOS**: `brew install jq`
 - **Windows**: Download from [https://stedolan.github.io/jq/download/](https://stedolan.github.io/jq/download/)
 
-### Clone the Repository
-
-```sh
-git clone https://github.com/yourusername/GitFolderDownloader.git
-cd GitFolderDownloader
-```
-
 ### Usage
 
 ```sh
