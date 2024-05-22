@@ -117,7 +117,7 @@ download_github_folder() {
                     destination_path="$local_dir/$(basename "$path")/$(basename "$file_path")"
                 fi
             elif [ "$rebase" = true ]; then
-                destination_path="$local_dir/$(basename "$path")/$(echo "$file_path" | sed "s|^$path/||")"
+                destination_path="$local_dir/$(echo "$file_path" | sed "s|^$path/||")"
             else
                 destination_path="$local_dir/$file_path"
             fi
