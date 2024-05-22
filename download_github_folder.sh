@@ -53,13 +53,16 @@ download_github_folder() {
     download_files() {
         local folder_url="$1"
         local local_dir="$2"
-        
+
+        echo "Fetching URL: $folder_url"
+
         # Fetch the JSON response from the GitHub API
         local response=$(curl -s "$folder_url")
 
         # Check if the response is valid JSON
         if ! echo "$response" | jq empty; then
             echo "Error: Invalid JSON response"
+            echo "Response: $response"
             return
         fi
 
