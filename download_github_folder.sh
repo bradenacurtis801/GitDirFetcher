@@ -7,11 +7,12 @@ download_github_folder() {
     local branch=""
     local dirname=""
     local rebase=false
+    local flat=false
     local max_jobs=20  # Reasonable number of parallel jobs
 
     # Display help message
     show_help() {
-        echo "Usage: download_github_folder -path <path> -repo <repo> -branch <branch> [-dirname <dirname>] [-rebase]"
+        echo "Usage: download_github_folder -path <path> -repo <repo> -branch <branch> [-dirname <dirname>] [-rebase] [-flat]"
         echo ""
         echo "Arguments:"
         echo "  -path <path>       The path in the repository to download."
@@ -19,6 +20,7 @@ download_github_folder() {
         echo "  -branch <branch>   The branch of the repository to download from."
         echo "  -dirname <dirname> Optional. The name of the local directory to save the files. Defaults to the basename of the path."
         echo "  -rebase            Optional. If specified, place the contents directly into the specified dirname."
+        echo "  -flat              Optional. If specified, place all files directly into the specified dirname without preserving the directory structure."
         echo "  -h                 Display this help message."
     }
 
@@ -35,6 +37,7 @@ download_github_folder() {
             -branch) branch=$(clean_quotes "$2"); shift ;;
             -dirname) dirname=$(clean_quotes "$2"); shift ;;
             -rebase) rebase=true ;;
+            -flat) flat=true ;;
             -h) show_help; exit 0 ;;
             *) echo "Unknown parameter passed: $1"; show_help; exit 1 ;;
         esac
@@ -67,6 +70,7 @@ download_github_folder() {
     echo "Branch: $branch"
     echo "Dirname: $dirname"
     echo "Rebase: $rebase"
+    echo "Flat: $flat"
 
     # Set the directory name to the basename of the path if not provided
     if [ -z "$dirname" ]; then
@@ -106,8 +110,14 @@ download_github_folder() {
 
             # Determine the destination path
             local destination_path
-            if [ "$rebase" = true ]; then
-                destination_path="$local_dir/$(basename "$file_path")"
+            if [ "$flat" = true ]; then
+                if [ "$rebase" = true ]; then
+                    destination_path="$local_dir/$(basename "$file_path")"
+                else
+                    destination_path="$local_dir/$(basename "$path")/$(basename "$file_path")"
+                fi
+            elif [ "$rebase" = true ]; then
+                destination_path="$local_dir/$(basename "$path")/$(echo "$file_path" | sed "s|^$path/||")"
             else
                 destination_path="$local_dir/$file_path"
             fi
@@ -140,6 +150,7 @@ download_github_folder() {
 
 # Example usage
 # download_github_folder -path charts/rancher-monitoring/102.0.1+up40.1.2 -repo rancher/charts -branch dev-v2.9 -dirname my_custom_directory -rebase
+# download_github_folder -path container-template/proxy -repo runpod/containers -branch main -dirname runpod_proxy_test -flat
 
 # Call the function with the provided arguments
 download_github_folder "$@"
