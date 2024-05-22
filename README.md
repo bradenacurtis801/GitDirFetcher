@@ -39,6 +39,17 @@ cd GitFolderDownloader
 ./download_github_folder.sh -path <path> -branch <branch> [-dirname <dirname>]
 ```
 
+### Alternate Usage
+
+```sh
+path='PATH-TO-REPO-DIRECTORY'
+repo='EXAMPLE/REPO'
+branch='BRANCH-NAME'
+dirname='DIRECTORY NAME TO CLONE INTO'
+
+curl -L https://raw.githubusercontent.com/bradenacurtis801/GitDirFetcher/main/download_github_folder.sh | sh -s -- -path $path -repo $repo -branch $branch -dirname $dirname
+```
+
 ### Arguments
 -path <path>: The path in the repository to download.
 -branch <branch>: The branch of the repository to download from.
