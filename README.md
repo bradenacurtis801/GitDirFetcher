@@ -29,7 +29,7 @@ You can install `jq` using your package manager:
 ### Usage
 
 ```sh
-./download_github_folder.sh -path <path> -branch <branch> [-dirname <dirname>] [-rebase]
+./download_github_folder.sh -path <path> -branch <branch> [-dirname <dirname>] [-rebase] [-flat]
 ```
 
 ### Alternate Usage
@@ -40,14 +40,15 @@ repo='EXAMPLE/REPO'
 branch='BRANCH-NAME'
 dirname='DIRECTORY NAME TO CLONE INTO'
 
-curl -L https://raw.githubusercontent.com/bradenacurtis801/GitDirFetcher/main/download_github_folder.sh | sh -s -- -path $path -repo $repo -branch $branch -dirname $dirname -rebase
+curl -L https://raw.githubusercontent.com/bradenacurtis801/GitDirFetcher/main/download_github_folder.sh | sh -s -- -path $path -repo $repo -branch $branch -dirname $dirname -rebase -flat
 ```
 
 ### Arguments
 - -path <path>: The path in the repository to download.
 - -branch <branch>: The branch of the repository to download from.
 - -dirname <dirname>: Optional. The name of the local directory to save the files. Defaults to the basename of the path.
-- -rebase: Optional. If specified, place the contents directly into the specified dirname, without preserving the full path structure from the repository.
+- -rebase: Optional. If specified, place the contents directly into the specified dirname, removing the parent directories but maintaining the file structure of the bottom directory.
+- -flat: Optional. If specified, flatten the contents of the bottom directory, removing all subdirectories and placing all files directly into the root the bottom directory.
 - -h: Display the help message.
 
 ### Example
