@@ -58,13 +58,6 @@ download_github_folder() {
         exit 1
     fi
 
-    # Check if variables are quoted correctly
-    if [[ "$path" =~ [[:space:]] ]] || [[ "$repo" =~ [[:space:]] ]] || [[ "$branch" =~ [[:space:]] ]] || [[ "$dirname" =~ [[:space:]] ]]; then
-        echo "Error: Arguments contain spaces or invalid characters. Ensure all arguments are correctly quoted."
-        show_help
-        exit 1
-    fi
-
     # Set the directory name to the basename of the path if not provided
     if [ -z "$dirname" ]; then
         dirname="$(basename "$path")"
