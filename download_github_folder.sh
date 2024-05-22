@@ -20,24 +20,23 @@ download_github_folder() {
         echo "  -h                 Display this help message."
     }
 
+    # Function to clean quotes
+    clean_quotes() {
+        echo "$1" | sed "s/[‘’]/'/g; s/[“”]/\"/g"
+    }
+
     # Parse arguments
     while [[ "$#" -gt 0 ]]; do
         case $1 in
-            -path) path="$2"; shift ;;
-            -repo) repo="$2"; shift ;;
-            -branch) branch="$2"; shift ;;
-            -dirname) dirname="$2"; shift ;;
+            -path) path=$(clean_quotes "$2"); shift ;;
+            -repo) repo=$(clean_quotes "$2"); shift ;;
+            -branch) branch=$(clean_quotes "$2"); shift ;;
+            -dirname) dirname=$(clean_quotes "$2"); shift ;;
             -h) show_help; exit 0 ;;
             *) echo "Unknown parameter passed: $1"; show_help; exit 1 ;;
         esac
         shift
     done
-
-    # Replace styled quotes with straight quotes
-    path=$(echo "$path" | sed "s/‘/'/g; s/’/'/g")
-    repo=$(echo "$repo" | sed "s/‘/'/g; s/’/'/g")
-    branch=$(echo "$branch" | sed "s/‘/'/g; s/’/'/g")
-    dirname=$(echo "$dirname" | sed "s/‘/'/g; s/’/'/g")
 
     # Validate required arguments
     if [ -z "$path" ]; then
