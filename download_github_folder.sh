@@ -6,17 +6,19 @@ download_github_folder() {
     local repo=""
     local branch=""
     local dirname=""
+    local rebase=false
     local max_jobs=20  # Reasonable number of parallel jobs
 
     # Display help message
     show_help() {
-        echo "Usage: download_github_folder -path <path> -repo <repo> -branch <branch> [-dirname <dirname>]"
+        echo "Usage: download_github_folder -path <path> -repo <repo> -branch <branch> [-dirname <dirname>] [-rebase]"
         echo ""
         echo "Arguments:"
         echo "  -path <path>       The path in the repository to download."
         echo "  -repo <repo>       The repository name."
         echo "  -branch <branch>   The branch of the repository to download from."
         echo "  -dirname <dirname> Optional. The name of the local directory to save the files. Defaults to the basename of the path."
+        echo "  -rebase            Optional. If specified, place the contents directly into the specified dirname."
         echo "  -h                 Display this help message."
     }
 
@@ -32,6 +34,7 @@ download_github_folder() {
             -repo) repo=$(clean_quotes "$2"); shift ;;
             -branch) branch=$(clean_quotes "$2"); shift ;;
             -dirname) dirname=$(clean_quotes "$2"); shift ;;
+            -rebase) rebase=true ;;
             -h) show_help; exit 0 ;;
             *) echo "Unknown parameter passed: $1"; show_help; exit 1 ;;
         esac
@@ -63,6 +66,7 @@ download_github_folder() {
     echo "Repo: $repo"
     echo "Branch: $branch"
     echo "Dirname: $dirname"
+    echo "Rebase: $rebase"
 
     # Set the directory name to the basename of the path if not provided
     if [ -z "$dirname" ]; then
@@ -77,7 +81,7 @@ download_github_folder() {
     download_files() {
         local folder_url="$1"
         local local_dir="$2"
-
+        
         echo "Fetching URL: $folder_url"
 
         # Fetch the JSON response from the GitHub API
@@ -100,12 +104,20 @@ download_github_folder() {
             local file_path=$(_jq '.path')
             local download_url=$(_jq '.download_url')
 
+            # Determine the destination path
+            local destination_path
+            if [ "$rebase" = true ]; then
+                destination_path="$local_dir/$(basename "$file_path")"
+            else
+                destination_path="$local_dir/$file_path"
+            fi
+
             # Check if the item is a file or directory
             if [ "$type" = "file" ]; then
                 # Create the directory structure and download the file
-                mkdir -p "$local_dir/$(dirname "$file_path")"
-                curl -s "$download_url" -o "$local_dir/$file_path" &
-                echo "Downloaded: $local_dir/$file_path"
+                mkdir -p "$(dirname "$destination_path")"
+                curl -s "$download_url" -o "$destination_path" &
+                echo "Downloaded: $destination_path"
             elif [ "$type" = "dir" ]; then
                 # If the item is a directory, recursively download its contents
                 local dir_url="${base_url}/${file_path}?ref=${branch}"
@@ -127,7 +139,7 @@ download_github_folder() {
 }
 
 # Example usage
-# download_github_folder -path charts/rancher-monitoring/102.0.1+up40.1.2 -repo rancher/charts -branch dev-v2.9 -dirname my_custom_directory
+# download_github_folder -path charts/rancher-monitoring/102.0.1+up40.1.2 -repo rancher/charts -branch dev-v2.9 -dirname my_custom_directory -rebase
 
 # Call the function with the provided arguments
 download_github_folder "$@"
