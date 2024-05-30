@@ -8,11 +8,12 @@ download_github_folder() {
     local dirname=""
     local rebase=false
     local flat=false
+    local token=""
     local max_jobs=20  # Reasonable number of parallel jobs
 
     # Display help message
     show_help() {
-        echo "Usage: download_github_folder -path <path> -repo <repo> -branch <branch> [-dirname <dirname>] [-rebase] [-flat]"
+        echo "Usage: download_github_folder -path <path> -repo <repo> -branch <branch> [-dirname <dirname>] [-rebase] [-flat] [-token <token>]"
         echo ""
         echo "Arguments:"
         echo "  -path <path>       The path in the repository to download."
@@ -21,6 +22,7 @@ download_github_folder() {
         echo "  -dirname <dirname> Optional. The name of the local directory to save the files. Defaults to the basename of the path."
         echo "  -rebase            Optional. If specified, place the contents directly into the specified dirname."
         echo "  -flat              Optional. If specified, place all files directly into the specified dirname without preserving the directory structure."
+        echo "  -token <token>     Optional. The GitHub personal access token for accessing private repositories."
         echo "  -h                 Display this help message."
     }
 
@@ -30,7 +32,7 @@ download_github_folder() {
     }
 
     # Parse arguments
-    while [[ "$#" -gt 0 ]]; do
+    while [ "$#" -gt 0 ]; do
         case $1 in
             -path) path=$(clean_quotes "$2"); shift ;;
             -repo) repo=$(clean_quotes "$2"); shift ;;
@@ -38,6 +40,7 @@ download_github_folder() {
             -dirname) dirname=$(clean_quotes "$2"); shift ;;
             -rebase) rebase=true ;;
             -flat) flat=true ;;
+            -token) token=$(clean_quotes "$2"); shift ;;
             -h) show_help; exit 0 ;;
             *) echo "Unknown parameter passed: $1"; show_help; exit 1 ;;
         esac
@@ -63,6 +66,12 @@ download_github_folder() {
         exit 1
     fi
 
+    if [ -z "$token" ]; then
+        echo "Error: -token argument is required for accessing private repositories."
+        show_help
+        exit 1
+    fi
+
     # Print cleaned arguments for debugging
     echo "Cleaned Arguments:"
     echo "Path: $path"
@@ -80,6 +89,7 @@ download_github_folder() {
     # Construct the GitHub API URL
     local url="https://api.github.com/repos/$repo/contents/$path?ref=$branch"
     local base_url="https://api.github.com/repos/$repo/contents"
+    local auth_header="Authorization: token $token"
 
     # Function to download files recursively
     download_files() {
@@ -89,7 +99,7 @@ download_github_folder() {
         echo "Fetching URL: $folder_url"
 
         # Fetch the JSON response from the GitHub API
-        local response=$(curl -s "$folder_url")
+        local response=$(curl -s -H "$auth_header" "$folder_url")
 
         # Check if the response is valid JSON
         if ! echo "$response" | jq empty; then
@@ -126,7 +136,7 @@ download_github_folder() {
             if [ "$type" = "file" ]; then
                 # Create the directory structure and download the file
                 mkdir -p "$(dirname "$destination_path")"
-                curl -s "$download_url" -o "$destination_path" &
+                curl -s -H "$auth_header" "$download_url" -o "$destination_path" &
                 echo "Downloaded: $destination_path"
             elif [ "$type" = "dir" ]; then
                 # If the item is a directory, recursively download its contents
@@ -144,13 +154,46 @@ download_github_folder() {
         wait
     }
 
-    # Start downloading files from the specified URL
-    download_files "$url" "$dirname"
-}
+    # Function to download a single file
+    download_file() {
+        local file_url="$1"
+        local local_dir="$2"
+        
+        echo "Fetching URL: $file_url"
 
-# Example usage
-# download_github_folder -path charts/rancher-monitoring/102.0.1+up40.1.2 -repo rancher/charts -branch dev-v2.9 -dirname my_custom_directory -rebase
-# download_github_folder -path container-template/proxy -repo runpod/containers -branch main -dirname runpod_proxy_test -flat
+        # Fetch the JSON response from the GitHub API
+        local response=$(curl -s -H "$auth_header" "$file_url")
+
+        # Check if the response is valid JSON
+        if ! echo "$response" | jq empty; then
+            echo "Error: Invalid JSON response"
+            echo "Response: $response"
+            return
+        fi
+
+        # Extract the download URL from the JSON response
+        local download_url=$(echo "$response" | jq -r '.download_url')
+        local file_name=$(basename "$path")
+        local destination_path="$local_dir/$file_name"
+
+        # Download the file
+        mkdir -p "$(dirname "$destination_path")"
+        curl -s -H "$auth_header" "$download_url" -o "$destination_path"
+        echo "Downloaded: $destination_path"
+    }
+
+    # Check if the path is a file or a directory
+    local path_type=$(curl -s -H "$auth_header" "https://api.github.com/repos/$repo/contents/$path?ref=$branch" | jq -r '.type')
+
+    if [ "$path_type" = "file" ]; then
+        download_file "$url" "$dirname"
+    elif [ "$path_type" = "dir" ]; then
+        download_files "$url" "$dirname"
+    else
+        echo "Error: Invalid path type. The path must be either a file or a directory."
+        exit 1
+    fi
+}
 
 # Call the function with the provided arguments
 download_github_folder "$@"
