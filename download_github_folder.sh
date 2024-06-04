@@ -66,12 +66,6 @@ download_github_folder() {
         exit 1
     fi
 
-    if [ -z "$token" ]; then
-        echo "Error: -token argument is required for accessing private repositories."
-        show_help
-        exit 1
-    fi
-
     # Print cleaned arguments for debugging
     echo "Cleaned Arguments:"
     echo "Path: $path"
