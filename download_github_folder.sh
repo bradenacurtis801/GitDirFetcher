@@ -162,7 +162,13 @@ download_github_folder() {
         echo "Fetching URL: $file_url"
 
         # Fetch the JSON response from the GitHub API
-        local response=$(curl -s -H "$auth_header" "$file_url")
+        # Check if auth_header is set (optional token)
+        if [[ -n "$auth_header" ]]; then
+          response=$(curl -s -H "$auth_header" "$file_url")
+        else
+          response=$(curl -s "$file_url")
+        fi
+        
 
         # Check if the response is valid JSON
         if ! echo "$response" | jq empty; then
