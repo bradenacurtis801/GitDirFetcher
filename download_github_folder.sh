@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env sh
 
 download_github_folder() {
     # Initialize variables
