@@ -92,8 +92,11 @@ download_github_folder() {
         
         echo "Fetching URL: $folder_url"
 
-        # Fetch the JSON response from the GitHub API
-        local response=$(curl -s -H "$auth_header" "$folder_url")
+        if [[ -n "$auth_header" ]]; then
+          local response=$(curl -s -H "$auth_header" "$file_url")
+        else
+          local response=$(curl -s "$file_url")
+        fi
 
         # Check if the response is valid JSON
         if ! echo "$response" | jq empty; then
@@ -158,9 +161,9 @@ download_github_folder() {
         # Fetch the JSON response from the GitHub API
         # Check if auth_header is set (optional token)
         if [[ -n "$auth_header" ]]; then
-          response=$(curl -s -H "$auth_header" "$file_url")
+          local response=$(curl -s -H "$auth_header" "$file_url")
         else
-          response=$(curl -s "$file_url")
+          local response=$(curl -s "$file_url")
         fi
         
 
