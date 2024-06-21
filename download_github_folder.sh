@@ -92,10 +92,10 @@ download_github_folder() {
         
         echo "Fetching URL: $folder_url"
 
-        if [[ -n "$auth_header" ]]; then
-          local response=$(curl -s -H "$auth_header" "$file_url")
+        if [ -n "$auth_header" ]; then
+            local response=$(curl -s -H "$auth_header" "$folder_url")
         else
-          local response=$(curl -s "$file_url")
+            local response=$(curl -s "$folder_url")
         fi
 
         # Check if the response is valid JSON
@@ -133,7 +133,11 @@ download_github_folder() {
             if [ "$type" = "file" ]; then
                 # Create the directory structure and download the file
                 mkdir -p "$(dirname "$destination_path")"
-                curl -s -H "$auth_header" "$download_url" -o "$destination_path" &
+                if [ -n "$auth_header" ]; then
+                    curl -s -H "$auth_header" "$download_url" -o "$destination_path" &
+                else
+                    curl -s "$download_url" -o "$destination_path" &
+                fi
                 echo "Downloaded: $destination_path"
             elif [ "$type" = "dir" ]; then
                 # If the item is a directory, recursively download its contents
@@ -142,7 +146,7 @@ download_github_folder() {
             fi
 
             # Limit the number of parallel jobs
-            while (( $(jobs -r | wc -l) >= max_jobs )); do
+            while [ $(jobs -r | wc -l) -ge "$max_jobs" ]; do
                 sleep 0.1
             done
         done
@@ -159,13 +163,11 @@ download_github_folder() {
         echo "Fetching URL: $file_url"
 
         # Fetch the JSON response from the GitHub API
-        # Check if auth_header is set (optional token)
-        if [[ -n "$auth_header" ]]; then
-          local response=$(curl -s -H "$auth_header" "$file_url")
+        if [ -n "$auth_header" ]; then
+            local response=$(curl -s -H "$auth_header" "$file_url")
         else
-          local response=$(curl -s "$file_url")
+            local response=$(curl -s "$file_url")
         fi
-        
 
         # Check if the response is valid JSON
         if ! echo "$response" | jq empty; then
@@ -181,12 +183,16 @@ download_github_folder() {
 
         # Download the file
         mkdir -p "$(dirname "$destination_path")"
-        curl -s -H "$auth_header" "$download_url" -o "$destination_path"
+        if [ -n "$auth_header" ]; then
+            curl -s -H "$auth_header" "$download_url" -o "$destination_path"
+        else
+            curl -s "$download_url" -o "$destination_path"
+        fi
         echo "Downloaded: $destination_path"
     }
 
     # Check if the path is a file or a directory
-    if [ -n "$auth_header" ]; then
+    if [ -n "$token" ]; then
         response=$(curl -s -H "$auth_header" "https://api.github.com/repos/$repo/contents/$path?ref=$branch")
     else
         response=$(curl -s "https://api.github.com/repos/$repo/contents/$path?ref=$branch")
@@ -207,3 +213,4 @@ download_github_folder() {
 
 # Call the function with the provided arguments
 download_github_folder "$@"
+
