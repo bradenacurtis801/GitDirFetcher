@@ -186,7 +186,12 @@ download_github_folder() {
     }
 
     # Check if the path is a file or a directory
-    local response=$(curl -s -H "$auth_header" "https://api.github.com/repos/$repo/contents/$path?ref=$branch")
+    if [ -n "$auth_header" ]; then
+        response=$(curl -s -H "$auth_header" "https://api.github.com/repos/$repo/contents/$path?ref=$branch")
+    else
+        response=$(curl -s "https://api.github.com/repos/$repo/contents/$path?ref=$branch")
+    fi
+
     echo "API Response: $response" # Debugging line
     local path_type=$(echo "$response" | jq -r 'if type=="array" then "dir" elif type=="object" then .type else empty end')
 
