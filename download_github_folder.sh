@@ -2,14 +2,14 @@
 
 download_github_folder() {
     # Initialize variables
-    local path=""
-    local repo=""
-    local branch=""
-    local dirname=""
-    local rebase=false
-    local flat=false
-    local token=""
-    local max_jobs=20  # Reasonable number of parallel jobs
+    path=""
+    repo=""
+    branch=""
+    dirname=""
+    rebase=false
+    flat=false
+    token=""
+    max_jobs=20  # Reasonable number of parallel jobs
 
     # Display help message
     show_help() {
@@ -81,25 +81,25 @@ download_github_folder() {
     fi
 
     # Construct the GitHub API URL
-    local url="https://api.github.com/repos/$repo/contents/$path?ref=$branch"
-    local base_url="https://api.github.com/repos/$repo/contents"
-    local auth_header="Authorization: token $token"
+    url="https://api.github.com/repos/$repo/contents/$path?ref=$branch"
+    base_url="https://api.github.com/repos/$repo/contents"
+    auth_header="Authorization: token $token"
 
     # Function to download files recursively
     download_files() {
-        local folder_url="$1"
-        local local_dir="$2"
+        folder_url="$1"
+        local_dir="$2"
         
         echo "Fetching URL: $folder_url"
 
-        if [ -n "$auth_header" ]; then
-            local response=$(curl -s -H "$auth_header" "$folder_url")
+        if [ -n "$token" ]; then
+            response=$(curl -s -H "$auth_header" "$folder_url")
         else
-            local response=$(curl -s "$folder_url")
+            response=$(curl -s "$folder_url")
         fi
 
         # Check if the response is valid JSON
-        if ! echo "$response" | jq empty; then
+        if ! echo "$response" | jq empty > /dev/null 2>&1; then
             echo "Error: Invalid JSON response"
             echo "Response: $response"
             return
@@ -111,12 +111,12 @@ download_github_folder() {
                 echo "$file" | base64 --decode | jq -r "$1"
             }
 
-            local type=$(_jq '.type')
-            local file_path=$(_jq '.path')
-            local download_url=$(_jq '.download_url')
+            type=$(_jq '.type')
+            file_path=$(_jq '.path')
+            download_url=$(_jq '.download_url')
 
             # Determine the destination path
-            local destination_path
+            destination_path=""
             if [ "$flat" = true ]; then
                 if [ "$rebase" = true ]; then
                     destination_path="$local_dir/$(basename "$file_path")"
@@ -133,7 +133,7 @@ download_github_folder() {
             if [ "$type" = "file" ]; then
                 # Create the directory structure and download the file
                 mkdir -p "$(dirname "$destination_path")"
-                if [ -n "$auth_header" ]; then
+                if [ -n "$token" ]; then
                     curl -s -H "$auth_header" "$download_url" -o "$destination_path" &
                 else
                     curl -s "$download_url" -o "$destination_path" &
@@ -141,12 +141,12 @@ download_github_folder() {
                 echo "Downloaded: $destination_path"
             elif [ "$type" = "dir" ]; then
                 # If the item is a directory, recursively download its contents
-                local dir_url="${base_url}/${file_path}?ref=${branch}"
+                dir_url="${base_url}/${file_path}?ref=${branch}"
                 download_files "$dir_url" "$local_dir"
             fi
 
             # Limit the number of parallel jobs
-            while [ $(jobs -r | wc -l) -ge "$max_jobs" ]; do
+            while [ "$(jobs | wc -l)" -ge "$max_jobs" ]; do
                 sleep 0.1
             done
         done
@@ -157,33 +157,33 @@ download_github_folder() {
 
     # Function to download a single file
     download_file() {
-        local file_url="$1"
-        local local_dir="$2"
+        file_url="$1"
+        local_dir="$2"
         
         echo "Fetching URL: $file_url"
 
         # Fetch the JSON response from the GitHub API
-        if [ -n "$auth_header" ]; then
-            local response=$(curl -s -H "$auth_header" "$file_url")
+        if [ -n "$token" ]; then
+            response=$(curl -s -H "$auth_header" "$file_url")
         else
-            local response=$(curl -s "$file_url")
+            response=$(curl -s "$file_url")
         fi
 
         # Check if the response is valid JSON
-        if ! echo "$response" | jq empty; then
+        if ! echo "$response" | jq empty > /dev/null 2>&1; then
             echo "Error: Invalid JSON response"
             echo "Response: $response"
             return
         fi
 
         # Extract the download URL from the JSON response
-        local download_url=$(echo "$response" | jq -r '.download_url')
-        local file_name=$(basename "$path")
-        local destination_path="$local_dir/$file_name"
+        download_url=$(echo "$response" | jq -r '.download_url')
+        file_name=$(basename "$path")
+        destination_path="$local_dir/$file_name"
 
         # Download the file
         mkdir -p "$(dirname "$destination_path")"
-        if [ -n "$auth_header" ]; then
+        if [ -n "$token" ]; then
             curl -s -H "$auth_header" "$download_url" -o "$destination_path"
         else
             curl -s "$download_url" -o "$destination_path"
@@ -199,7 +199,7 @@ download_github_folder() {
     fi
 
     echo "API Response: $response" # Debugging line
-    local path_type=$(echo "$response" | jq -r 'if type=="array" then "dir" elif type=="object" then .type else empty end')
+    path_type=$(echo "$response" | jq -r 'if type=="array" then "dir" elif type=="object" then .type else empty end')
 
     if [ "$path_type" = "file" ]; then
         download_file "$url" "$dirname"
@@ -213,4 +213,3 @@ download_github_folder() {
 
 # Call the function with the provided arguments
 download_github_folder "$@"
-
